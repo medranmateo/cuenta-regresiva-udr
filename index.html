@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimo dia de Raspu (UDR)</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        /* --- RESET Y ESTILOS BASE --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #0f172a;
+            /* Fondo oscuro moderno (Slate 900) */
+            color: #f8fafc;
+            /* Texto casi blanco */
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            /* Evita barras de desplazamiento */
+            position: relative;
+            /* Necesario para el canvas del confeti */
+        }
+
+        /* --- CANVAS PARA EL CONFETI --- */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            /* Permite hacer clic a través del confeti */
+            z-index: 10;
+            /* Asegura que esté por encima del fondo pero debajo del texto si fuera interactivo */
+        }
+
+        /* --- CONTENEDOR PRINCIPAL --- */
+        .container {
+            text-align: center;
+            padding: 2rem;
+            animation: fadeIn 1.5s ease-in-out;
+            z-index: 20;
+            /* El texto por encima del confeti */
+        }
+
+        /* --- TÍTULO --- */
+        h1 {
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 1.5rem;
+            margin-bottom: 3rem;
+            color: #94a3b8;
+            /* Gris azulado suave */
+        }
+
+        /* --- CONTENEDOR DEL RELOJ --- */
+        .countdown {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            /* Espacio entre los números */
+            flex-wrap: wrap;
+        }
+
+        /* --- CAJAS DE TIEMPO INDIVIDUALES --- */
+        .time-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+        }
+
+        /* --- LOS NÚMEROS --- */
+        .number {
+            font-size: 5rem;
+            font-weight: 700;
+            line-height: 1;
+            background: -webkit-linear-gradient(#fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            /* Efecto degradado sutil en texto */
+            font-variant-numeric: tabular-nums;
+            /* Evita que los números "salten" al cambiar de ancho */
+        }
+
+        /* --- LAS ETIQUETAS (Días, Horas, etc) --- */
+        .label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0.5rem;
+            color: #64748b;
+        }
+
+        /* --- MENSAJE FINAL --- */
+        #message {
+            display: none;
+            font-size: 2rem;
+            color: #4ade80;
+            /* Verde neón suave que combina con el confeti */
+            margin-top: 2rem;
+            font-weight: 700;
+            animation: popIn 0.5s ease-out;
+        }
+
+        /* --- ANIMACIONES --- */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            80% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* --- RESPONSIVE (MÓVIL) --- */
+        @media (max-width: 600px) {
+            .countdown {
+                gap: 1rem;
+            }
+
+            .number {
+                font-size: 3rem;
+            }
+
+            .time-box {
+                min-width: 70px;
+            }
+
+            h1 {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="container">
+        <h1>Ultimo dia de Raspu (UDR)</h1>
+
+        <div class="countdown" id="countdown-ui">
+            <div class="time-box">
+                <span class="number" id="days">00</span>
+                <span class="label">Días</span>
+            </div>
+            <div class="time-box">
+                <span class="number" id="hours">00</span>
+                <span class="label">Horas</span>
+            </div>
+            <div class="time-box">
+                <span class="number" id="minutes">00</span>
+                <span class="label">Minutos</span>
+            </div>
+            <div class="time-box">
+                <span class="number" id="seconds">00</span>
+                <span class="label">Segundos</span>
+            </div>
+        </div>
+
+        <div id="message">¡El momento ha llegado! <br> 🎉 UDR 🎉</div>
+    </div>
+
+    <script>
+        // --- CONFIGURACIÓN DEL CONFETI ---
+        // Inicializamos el confeti en nuestro canvas específico
+        var myCanvas = document.getElementById('confetti-canvas');
+        var myConfetti = confetti.create(myCanvas, {
+            resize: true, // Se adapta si cambias el tamaño de ventana
+            useWorker: true // Usa un hilo secundario para mejor rendimiento
+        });
+
+        // Bandera para saber si ya empezamos la fiesta
+        let celebrationStarted = false;
+
+        // Función para lanzar confeti continuo
+        function startCelebration() {
+            // Colores que combinan con el tema (Verde neón, Blanco, Gris claro)
+            const colors = ['#4ade80', '#ffffff', '#cbd5e1'];
+
+            // Lanzamos un loop de animación
+            (function frame() {
+                myConfetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0, y: 0.8 }, // Desde la izquierda abajo
+                    colors: colors,
+                    ticks: 300, // Duración de caída de las partículas
+                    scalar: 1.2 // Tamaño un poco más grande
+                });
+                myConfetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1, y: 0.8 }, // Desde la derecha abajo
+                    colors: colors,
+                    ticks: 300,
+                    scalar: 1.2
+                });
+
+                // Si ya empezó, sigue lanzando frames infinitamente
+                if (celebrationStarted) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+
+        // --- LÓGICA DE LA CUENTA REGRESIVA ---
+
+        // FECHA OBJETIVO: 30 de Enero de 2026 a las 16:20:00
+        const targetDate = new Date("January 30, 2026 16:20:00").getTime();
+        // const targetDate = new Date().getTime() + 5000; // PÁRA PROBAR: Descomenta esto para probar 5 segundos
+
+        const interval = setInterval(updateCountdown, 1000);
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+
+            // Cálculos de tiempo
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Mostrar en el HTML (con ceros a la izquierda)
+            document.getElementById("days").innerText = days < 10 ? "0" + days : days;
+            document.getElementById("hours").innerText = hours < 10 ? "0" + hours : hours;
+            document.getElementById("minutes").innerText = minutes < 10 ? "0" + minutes : minutes;
+            document.getElementById("seconds").innerText = seconds < 10 ? "0" + seconds : seconds;
+
+            // --- CUANDO TERMINA LA CUENTA ---
+            if (distance < 0) {
+                clearInterval(interval); // Detener el reloj
+
+                // Ocultar reloj y mostrar mensaje
+                document.getElementById("countdown-ui").style.display = "none";
+                document.getElementById("message").style.display = "block";
+
+                // Iniciar confeti si no ha empezado aún
+                if (!celebrationStarted) {
+                    celebrationStarted = true;
+                    startCelebration();
+                }
+            }
+        }
+
+        // Ejecutar inmediatamente al cargar para verificar si la fecha ya pasó
+        updateCountdown();
+    </script>
+</body>
+
+</html>
