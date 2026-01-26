@@ -195,7 +195,7 @@
             </div>
         </div>
 
-        <div id="message">¡El momento ha llegado! <br> 🎉 UDR 🎉</div>
+        <div id="message">¡FELICIDADES RASPU! <br> 🎉 UDR 🎉</div>
     </div>
 
     <script>
@@ -212,7 +212,7 @@
 
         // Función para lanzar confeti continuo
         function startCelebration() {
-            // Colores que combinan con el tema (Verde neón, Blanco, Gris claro)
+            // Colores que combinan con el tema (Verde neón, Blanco, Gris claro, AZUL NEON, ROJO NEON)
             const colors = ['#4ade80', '#ffffff', '#cbd5e1'];
 
             // Lanzamos un loop de animación
@@ -224,7 +224,7 @@
                     origin: { x: 0, y: 0.8 }, // Desde la izquierda abajo
                     colors: colors,
                     ticks: 300, // Duración de caída de las partículas
-                    scalar: 1.2 // Tamaño un poco más grande
+                    scalar: 1.8  // Tamaño un poco más grande
                 });
                 myConfetti({
                     particleCount: 3,
@@ -233,7 +233,7 @@
                     origin: { x: 1, y: 0.8 }, // Desde la derecha abajo
                     colors: colors,
                     ticks: 300,
-                    scalar: 1.2
+                    scalar: 1.8
                 });
 
                 // Si ya empezó, sigue lanzando frames infinitamente
@@ -246,8 +246,8 @@
 
         // --- LÓGICA DE LA CUENTA REGRESIVA ---
 
-        // FECHA OBJETIVO: 30 de Enero de 2026 a las 07:20:00
-        const targetDate = new Date("January 30, 2026 07:20:00").getTime();
+        // FECHA OBJETIVO: 30 de Enero de 2026 a las 16:20:00
+        const targetDate = new Date("January 30, 2026 16:20:00").getTime();
         // const targetDate = new Date().getTime() + 5000; // PÁRA PROBAR: Descomenta esto para probar 5 segundos
 
         const interval = setInterval(updateCountdown, 1000);
