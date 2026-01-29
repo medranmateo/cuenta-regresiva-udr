@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ultimo dia de Raspu (UDR)</title>
-
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;700&display=swap" rel="stylesheet">
@@ -13,169 +12,102 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
-        /* --- RESET Y ESTILOS BASE --- */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* --- ESTILOS BASE --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #0f172a;
-            /* Fondo oscuro moderno (Slate 900) */
+            background-color: #0f172a; /* Slate 900 */
             color: #f8fafc;
-            /* Texto casi blanco */
             font-family: 'Outfit', sans-serif;
             overflow: hidden;
-            /* Evita barras de desplazamiento */
             position: relative;
-            /* Necesario para el canvas del confeti */
         }
 
-        /* --- CANVAS PARA EL CONFETI --- */
+        /* --- CANVAS CONFETI (Z-index más alto para el final) --- */
         #confetti-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            /* Permite hacer clic a través del confeti */
-            z-index: 10;
-            /* Asegura que esté por encima del fondo pero debajo del texto si fuera interactivo */
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 100;
         }
 
-        /* --- CONTENEDOR PRINCIPAL --- */
+        /* --- CONTENEDOR PRINCIPAL (Z-index medio) --- */
         .container {
-            text-align: center;
-            padding: 2rem;
-            animation: fadeIn 1.5s ease-in-out;
-            z-index: 20;
-            /* El texto por encima del confeti */
+            text-align: center; padding: 2rem; animation: fadeIn 1.5s ease-in-out; 
+            z-index: 50; /* Por encima de la lluvia, debajo del confeti */
+            position: relative;
+            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.8) 0%, rgba(15, 23, 42, 0) 70%); /* Sutil fondo para leer mejor si pasa una frase por detrás */
         }
 
-        /* --- TÍTULO --- */
-        h1 {
-            font-weight: 300;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-size: 1.5rem;
-            margin-bottom: 3rem;
-            color: #94a3b8;
-            /* Gris azulado suave */
-        }
-
-        /* --- CONTENEDOR DEL RELOJ --- */
-        .countdown {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            /* Espacio entre los números */
-            flex-wrap: wrap;
-        }
-
-        /* --- CAJAS DE TIEMPO INDIVIDUALES --- */
-        .time-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 100px;
-        }
-
-        /* --- LOS NÚMEROS --- */
-        .number {
-            font-size: 5rem;
+        /* --- ESTILOS DE LA LLUVIA DE FRASES --- */
+        .rain-phrase {
+            position: fixed;
+            top: -50px; /* Empiezan fuera de pantalla */
+            color: rgba(148, 163, 184, 0.4); /* Color Slate 400 muy transparente y sutil */
             font-weight: 700;
-            line-height: 1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            pointer-events: none; /* No interfieren con clicks */
+            z-index: 10; /* Detrás del contador principal */
+            white-space: nowrap;
+            will-change: transform, opacity; /* Optimización de rendimiento */
+        }
+
+        /* Animación de caída */
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(110vh) rotate(5deg); opacity: 0; }
+        }
+
+        /* --- RESTO DEL CSS DEL CONTADOR --- */
+        h1 {
+            font-weight: 300; letter-spacing: 2px; text-transform: uppercase;
+            font-size: 1.5rem; margin-bottom: 3rem; color: #94a3b8;
+        }
+        .countdown {
+            display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;
+        }
+        .time-box {
+            display: flex; flex-direction: column; align-items: center; min-width: 100px;
+        }
+        .number {
+            font-size: 5rem; font-weight: 700; line-height: 1;
             background: -webkit-linear-gradient(#fff, #cbd5e1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            /* Efecto degradado sutil en texto */
             font-variant-numeric: tabular-nums;
-            /* Evita que los números "salten" al cambiar de ancho */
         }
-
-        /* --- LAS ETIQUETAS (Días, Horas, etc) --- */
         .label {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 0.5rem;
-            color: #64748b;
+            font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
+            margin-top: 0.5rem; color: #64748b;
         }
-
-        /* --- MENSAJE FINAL --- */
         #message {
-            display: none;
-            font-size: 2rem;
-            color: #4ade80;
-            /* Verde neón suave que combina con el confeti */
-            margin-top: 2rem;
-            font-weight: 700;
-            animation: popIn 0.5s ease-out;
+            display: none; font-size: 2rem; color: #4ade80;
+            margin-top: 2rem; font-weight: 700; animation: popIn 0.5s ease-out;
         }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 80% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1;} }
 
-        /* --- ANIMACIONES --- */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes popIn {
-            0% {
-                transform: scale(0.8);
-                opacity: 0;
-            }
-
-            80% {
-                transform: scale(1.05);
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        /* --- RESPONSIVE (MÓVIL) --- */
         @media (max-width: 600px) {
-            .countdown {
-                gap: 1rem;
-            }
-
-            .number {
-                font-size: 3rem;
-            }
-
-            .time-box {
-                min-width: 70px;
-            }
-
-            h1 {
-                font-size: 1.1rem;
-            }
+            .countdown { gap: 1rem; }
+            .number { font-size: 3rem; }
+            .time-box { min-width: 70px; }
+            h1 { font-size: 1.1rem; }
+            .rain-phrase { font-size: 0.8rem !important; } /* Frases más pequeñas en móvil */
         }
     </style>
 </head>
-
 <body>
 
     <canvas id="confetti-canvas"></canvas>
 
     <div class="container">
         <h1>Ultimo dia de Raspu (UDR)</h1>
-
+        
         <div class="countdown" id="countdown-ui">
             <div class="time-box">
                 <span class="number" id="days">00</span>
@@ -195,98 +127,127 @@
             </div>
         </div>
 
-        <div id="message">¡FELICIDADES RASPU! <br> 🎉 UDR 🎉</div>
+        <div id="message">¡El momento ha llegado! <br> 🎉 UDR 🎉</div>
     </div>
 
     <script>
-        // --- CONFIGURACIÓN DEL CONFETI ---
-        // Inicializamos el confeti en nuestro canvas específico
-        var myCanvas = document.getElementById('confetti-canvas');
-        var myConfetti = confetti.create(myCanvas, {
-            resize: true, // Se adapta si cambias el tamaño de ventana
-            useWorker: true // Usa un hilo secundario para mejor rendimiento
-        });
+        // ==========================================
+        // --- LÓGICA DE LA LLUVIA DE FRASES ---
+        // ==========================================
 
-        // Bandera para saber si ya empezamos la fiesta
-        let celebrationStarted = false;
+        // 1. DATA HARDCODEADA (Aquí es donde conectarías tu API en el futuro)
+        let phrases = [
+            "En todos lados se cuecen habas",
+            "Uno es padre hasta que se muere",
+            "Tanto va el cantaro a la fuente... que al final se llena",
+            "El ser humano es hijo del rigor",
+            "Donde come capitán, no come marinero",
+            "El buey solo bien se lame",
+            "Uno no coincide por casualidad",
+            "No te cae un angel... si andas por el infierno",
+            "Hay gente que hace ruido al entrar a un lugar, por que no tiene luz interior",
+            "Sí tenes que estar cuidando a tu mujer, es por que tu mujer no te pertenece",
+            "Cuando el río suena, es por que agua trae",
+            "Todos los nudos caen al peine"
+        ];
 
-        // Función para lanzar confeti continuo
-        function startCelebration() {
-            // Colores que combinan con el tema (Verde neón, Blanco, Gris claro, AZUL NEON, ROJO NEON)
-            const colors = ['#4ade80', '#ffffff', '#cbd5e1'];
+        /* --- EJEMPLO DE CÓMO SERÍA CON API EN EL FUTURO ---
+        // function fetchPhrases() {
+        //    fetch('https://tu-api.com/frases')
+        //        .then(response => response.json())
+        //        .then(data => {
+        //            // Asumiendo que la API devuelve un array de strings
+        //            phrases = data; 
+        //        })
+        //        .catch(error => console.error('Error fetching phrases:', error));
+        // }
+        // fetchPhrases(); // Llamar al inicio
+        ---------------------------------------------------- */
 
-            // Lanzamos un loop de animación
-            (function frame() {
-                myConfetti({
-                    particleCount: 3,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0, y: 0.8 }, // Desde la izquierda abajo
-                    colors: colors,
-                    ticks: 300, // Duración de caída de las partículas
-                    scalar: 1.8  // Tamaño un poco más grande
-                });
-                myConfetti({
-                    particleCount: 3,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1, y: 0.8 }, // Desde la derecha abajo
-                    colors: colors,
-                    ticks: 300,
-                    scalar: 1.8
-                });
 
-                // Si ya empezó, sigue lanzando frames infinitamente
-                if (celebrationStarted) {
-                    requestAnimationFrame(frame);
-                }
-            }());
+        // 2. FUNCIÓN PARA CREAR UNA GOTA DE LLUVIA
+        function createRainDrop() {
+            if (phrases.length === 0) return;
+
+            const drop = document.createElement('div');
+            drop.classList.add('rain-phrase');
+            
+            // Elegir frase aleatoria
+            drop.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+
+            // Posición horizontal aleatoria
+            drop.style.left = Math.random() * 95 + 'vw';
+
+            // Variación en la velocidad de caída (entre 5s y 12s)
+            const duration = Math.random() * 7 + 5 + 's';
+            drop.style.animation = `fall ${duration} linear forwards`;
+
+            // Variación en el tamaño de fuente (entre 0.9rem y 1.5rem)
+            const fontSize = Math.random() * 0.6 + 0.9 + 'rem';
+            drop.style.fontSize = fontSize;
+
+            document.body.appendChild(drop);
+
+            // LIMPIEZA: Eliminar el elemento cuando termine la animación
+            drop.addEventListener('animationend', () => {
+                drop.remove();
+            });
         }
 
+        // Iniciar la lluvia: crear una gota cada cierto tiempo (ej. cada 800ms)
+        let rainInterval = setInterval(createRainDrop, 800);
 
-        // --- LÓGICA DE LA CUENTA REGRESIVA ---
 
-        // FECHA OBJETIVO: 30 de Enero de 2026 a las 16:20:00
-        const targetDate = new Date("January 30, 2026 16:20:00").getTime();
-        // const targetDate = new Date().getTime() + 5000; // PÁRA PROBAR: Descomenta esto para probar 5 segundos
+        // ==========================================
+        // --- LÓGICA DE LA CUENTA REGRESIVA SIMPLE ---
+        // ==========================================
 
-        const interval = setInterval(updateCountdown, 1000);
+        const TARGET_DATE = new Date("January 30, 2026 16:20:00").getTime();
+        // const TARGET_DATE = new Date().getTime() + 5000; // DESCOMENTAR PARA PROBAR FINAL (5 segundos)
+
+        let celebrationStarted = false;
 
         function updateCountdown() {
             const now = new Date().getTime();
-            const distance = targetDate - now;
+            const distance = TARGET_DATE - now;
 
-            // Cálculos de tiempo
+            // Cálculos simples de tiempo restante
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            // Mostrar en el HTML (con ceros a la izquierda)
-            document.getElementById("days").innerText = days < 10 ? "0" + days : days;
-            document.getElementById("hours").innerText = hours < 10 ? "0" + hours : hours;
-            document.getElementById("minutes").innerText = minutes < 10 ? "0" + minutes : minutes;
-            document.getElementById("seconds").innerText = seconds < 10 ? "0" + seconds : seconds;
+            document.getElementById("days").innerText = days < 10 ? "0" + Math.max(0, days) : days;
+            document.getElementById("hours").innerText = hours < 10 ? "0" + Math.max(0, hours) : hours;
+            document.getElementById("minutes").innerText = minutes < 10 ? "0" + Math.max(0, minutes) : minutes;
+            document.getElementById("seconds").innerText = seconds < 10 ? "0" + Math.max(0, seconds) : seconds;
 
-            // --- CUANDO TERMINA LA CUENTA ---
+            // CUANDO TERMINA LA CUENTA
             if (distance < 0) {
-                clearInterval(interval); // Detener el reloj
+                clearInterval(countdownInterval);
+                // Opcional: detener la lluvia de frases al finalizar
+                clearInterval(rainInterval); 
 
-                // Ocultar reloj y mostrar mensaje
                 document.getElementById("countdown-ui").style.display = "none";
                 document.getElementById("message").style.display = "block";
-
-                // Iniciar confeti si no ha empezado aún
+                
                 if (!celebrationStarted) {
                     celebrationStarted = true;
-                    startCelebration();
+                    // Configuración del confeti (igual que antes)
+                    var myCanvas = document.getElementById('confetti-canvas');
+                    var myConfetti = confetti.create(myCanvas, { resize: true, useWorker: true });
+                    const colors = ['#4ade80', '#ffffff', '#cbd5e1'];
+                    (function frame() {
+                        myConfetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.8 }, colors: colors, scalar: 1.2 });
+                        myConfetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.8 }, colors: colors, scalar: 1.2 });
+                        requestAnimationFrame(frame);
+                    }());
                 }
             }
         }
 
-        // Ejecutar inmediatamente al cargar para verificar si la fecha ya pasó
+        const countdownInterval = setInterval(updateCountdown, 1000);
         updateCountdown();
     </script>
 </body>
-
 </html>
