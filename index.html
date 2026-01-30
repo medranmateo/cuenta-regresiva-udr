@@ -84,9 +84,22 @@
             font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;
             margin-top: 0.5rem; color: #64748b;
         }
+        
+        /* Estilos del Mensaje Final */
         #message {
-            display: none; font-size: 2rem; color: #4ade80;
-            margin-top: 2rem; font-weight: 700; animation: popIn 0.5s ease-out;
+            display: none; 
+            font-size: 2.5rem; 
+            color: #4ade80;
+            margin-top: 2rem; 
+            font-weight: 700; 
+            /* Agregamos una transición suave de opacidad para el cambio de texto */
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0; /* Empieza invisible para el efecto fade-in */
+        }
+        
+        /* Clase para mostrar el mensaje */
+        #message.visible {
+            opacity: 1;
         }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -127,10 +140,11 @@
             </div>
         </div>
 
-        <div id="message">¡El momento ha llegado! <br> 🎉 UDR 🎉</div>
+        <div id="message"></div>
     </div>
 
     <script>
+        console.log("last version: 2026-01-30 00:00");
         // ==========================================
         // --- LÓGICA DE LA LLUVIA DE FRASES ---
         // ==========================================
@@ -149,6 +163,15 @@
             "Sí tenes que estar cuidando a tu mujer, es por que tu mujer no te pertenece",
             "Cuando el río suena, es por que agua trae",
             "Todos los nudos caen al peine"
+        ];
+
+        // Frases finales (para rotar cuando termine)
+        const finalMessages = [
+            "¡Fin de una era! <br> ✨ UDR ✨",
+            "¡Eres libre, Raspu! <br> 🚀 Nada como el placer de acabar...",
+            "Misión Completada <br> ¡Exitos en lo que viene!🎯",
+            "¡A disfrutar la vida! <br> 😎",
+            "Game Over! <br> ✨ UDR ✨"
         ];
 
         /* --- EJEMPLO DE CÓMO SERÍA CON API EN EL FUTURO ---
@@ -197,6 +220,24 @@
         // Iniciar la lluvia: crear una gota cada cierto tiempo (ej. cada 800ms)
         let rainInterval = setInterval(createRainDrop, 800);
 
+        let msgIndex = 0;
+        let messageInterval = null;
+
+        function rotateFinalMessage() {
+            const msgEl = document.getElementById("message");
+            
+            // 1. Ocultamos el texto (fade out)
+            msgEl.classList.remove("visible");
+
+            // 2. Esperamos medio segundo, cambiamos texto y mostramos (fade in)
+            setTimeout(() => {
+                msgEl.innerHTML = finalMessages[msgIndex];
+                msgEl.classList.add("visible");
+                
+                // Actualizar índice para la próxima (bucle infinito)
+                msgIndex = (msgIndex + 1) % finalMessages.length;
+            }, 500); // 500ms coincide con la transición CSS
+        }
 
         // ==========================================
         // --- LÓGICA DE LA CUENTA REGRESIVA SIMPLE ---
@@ -230,6 +271,12 @@
 
                 document.getElementById("countdown-ui").style.display = "none";
                 document.getElementById("message").style.display = "block";
+
+                // Iniciar la rotación de mensajes si no ha empezado
+                if (!messageInterval) {
+                    rotateFinalMessage(); // Muestra el primero inmediatamente
+                    messageInterval = setInterval(rotateFinalMessage, 4000); // Cambia cada 4 segundos
+                }
                 
                 if (!celebrationStarted) {
                     celebrationStarted = true;
